@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  gunicorn:
+    build: .
+    volumes:
+      - ./src:/src
+      - ./dotenv:/.env:ro
+    ports:
+      - 3123:3123
+    command: gunicorn -b 0.0.0.0:3123 wsgi:app
+    restart: unless-stopped
