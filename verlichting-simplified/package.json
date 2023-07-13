@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n frontend,api \"npm:start\" \"npm:start-api\"",
+    "start": "vite",
+    "start-api": "cd ../api ; docker-compose -f docker-compose-dev.yml up",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
@@ -21,6 +23,7 @@
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^3.1.0",
+    "concurrently": "^8.2.0",
     "typescript": "^4.9.3",
     "vite": "^4.2.0"
   }
