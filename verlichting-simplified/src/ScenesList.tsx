@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Scene } from "./Scene";
-import { SceneEntry } from "./SceneEntry";
+import { ListEntry } from "./ListEntry";
 
 const SceneOrder = ["scene.uit", "scene.ochtend", "scene.middag", "scene.avond", "scene.nacht"];
 
@@ -24,14 +24,14 @@ export function ScenesList({ onActivateScene, scenes }: ScenesListProps) {
     return (
         <ol>
             {sortedScenes.map((scene) => (
-                <SceneEntry
+                <ListEntry
                     key={scene.id}
-                    isCurrent={scene.id === currentScene.id}
+                    isActive={scene.id === currentScene.id}
                     isLoading={scene.id === loadingScene?.id}
                     onClick={() => onSceneClick(scene)}
                 >
                     {scene.friendlyName}
-                </SceneEntry>
+                </ListEntry>
             ))}
         </ol>
     );
