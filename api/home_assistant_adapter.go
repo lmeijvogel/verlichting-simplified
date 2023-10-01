@@ -188,6 +188,10 @@ func performRequestWithMethodAndBody(url string, ha HomeAssistantAdapter, method
 
 	response, err := client.Do(req)
 
+	if err != nil {
+		return nil, err
+	}
+
 	if response.StatusCode != 200 {
 		return nil, fmt.Errorf("Upstream server error, status %v", response.StatusCode)
 	}
