@@ -7,8 +7,9 @@ RUN go get github.com/gin-gonic/gin
 RUN go get github.com/joho/godotenv
 RUN go get golang.org/x/exp/slices
 
-COPY * ./
 RUN go mod tidy
+
+COPY * ./
 
 RUN mkdir bin
 RUN go build -o bin/api

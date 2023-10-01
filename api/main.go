@@ -111,9 +111,9 @@ func getAllowedSceneIds() []string {
 }
 
 func getAllowedSwitchIds() []string {
-	return []string{"switch.bureau", "switch.elektrische_deken", "switch.mechanische_ventilatie", "switch.babyfoon", "switch.tv_meubel"}
+	return []string{"switch.elektrische_deken", "switch.mechanische_ventilatie", "switch.babyfoon", "switch.tv_meubel"}
 }
 
 func getAllowedStateIds() []string {
-	return []string{"input_boolean.vacation_mode"}
+	return []string{"input_boolean.vacation_mode", "input_boolean.elektrische_deken_in_gebruik", "input_boolean.kerstboom"}
 }
