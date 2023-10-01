@@ -1,12 +1,15 @@
 version: "3"
 
 services:
-  gunicorn:
+  api:
     build: .
-    volumes:
-      - ./src:/src
-      - ./dotenv:/.env:ro
     ports:
       - 3123:3123
-    command: gunicorn -b 0.0.0.0:3123 wsgi:app
+    volumes:
+      - .env:/src/.env:ro
+    environment:
+      - GIN_MODE=release
+    command: ./api
     restart: unless-stopped
+
+# vim: ts=2 sw=2

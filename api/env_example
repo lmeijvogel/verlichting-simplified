@@ -1,0 +1,2 @@
+API_HOST="http://<host>:<port>" # Or https
+API_TOKEN="<the_token_you_received_from_home_assistant>"

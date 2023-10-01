@@ -1,11 +1,16 @@
-FROM python:3
+FROM golang:1.21
 
 WORKDIR /src
 
-RUN apt-get update && apt-get install tini && rm -rf /var/lib/apt/lists/*
+COPY go.mod ./
+RUN go get github.com/gin-gonic/gin
+RUN go get github.com/joho/godotenv
+RUN go get golang.org/x/exp/slices
 
-# https://www.twilio.com/docs/usage/tutorials/how-to-set-up-your-python-and-flask-development-environment
-RUN pip install --root-user-action=ignore Flask twilio requests python-dotenv gunicorn
+COPY * ./
+RUN go mod tidy
 
-ENTRYPOINT ["tini", "--"]
-CMD ["python", "app.py"]
+RUN mkdir bin
+RUN go build -o bin/api
+
+CMD bin/api
