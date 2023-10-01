@@ -9,7 +9,6 @@ services:
       - .env:/src/.env:ro
     environment:
       - GIN_MODE=release
-    command: ./api
     restart: unless-stopped
 
 # vim: ts=2 sw=2
