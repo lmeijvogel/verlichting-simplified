@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently -n frontend,api \"npm:start\" \"npm:start-api\"",
     "start": "vite",
-    "start-api": "cd ../api ; docker-compose -f docker-compose-dev.yml up",
+    "start-api": "cd ../api ; docker-compose -f docker-compose.yml up",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
