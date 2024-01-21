@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  api:
+  verlichting-api:
     build: .
     ports:
       - 3123:3123
@@ -9,6 +9,15 @@ services:
       - .env:/src/.env:ro
     environment:
       - GIN_MODE=release
+    networks:
+      - local_verlichting_network
     restart: unless-stopped
+
+networks:
+    local_verlichting_network:
+      driver: bridge
+      ipam:
+        config:
+        - subnet:  10.0.140.0/24
 
 # vim: ts=2 sw=2
