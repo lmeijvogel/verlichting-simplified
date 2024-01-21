@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sort"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -57,6 +58,19 @@ func getEntities[T HasID](c *gin.Context, getter func() ([]T, error), whitelist 
 			allowedEntities = append(allowedEntities, typedEntity)
 		}
 	}
+
+	sort.Slice(allowedEntities, func(i, j int) bool {
+		equals := func(requiredId string) func(string) bool {
+			return func(entityId string) bool {
+				return entityId == requiredId
+			}
+		}
+
+		positionI := slices.IndexFunc(whitelist, equals(allowedEntities[i].GetID()))
+		positionJ := slices.IndexFunc(whitelist, equals(allowedEntities[j].GetID()))
+
+		return positionI < positionJ
+	})
 
 	c.IndentedJSON(http.StatusOK, allowedEntities)
 }
