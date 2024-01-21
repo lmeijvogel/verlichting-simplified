@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -63,6 +64,10 @@ func (ha HomeAssistantAdapter) GetStates() ([]Switch, error) {
 	return getTypedEntities(ha, deserializeSwitch)
 }
 
+func (ha HomeAssistantAdapter) GetLights() ([]Switch, error) {
+	return getTypedEntities(ha, deserializeSwitch)
+}
+
 func (ha HomeAssistantAdapter) StartScene(sceneId string) (*Scene, error) {
 	url := fmt.Sprintf("%v/api/services/scene/turn_on", ha.host)
 
@@ -90,6 +95,34 @@ func (ha HomeAssistantAdapter) SetSwitch(switchId string, newState AllowedStateV
 		command = "turn_on"
 	}
 	url := fmt.Sprintf("%v/api/services/switch/%v", ha.host, command)
+
+	data := fmt.Sprintf(`{"entity_id": "%v" }`, switchId)
+
+	response, err := performRequestWithMethodAndBody(url, ha, "POST", data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	theSwitch, err := decodeResponse(response, deserializeSwitch)
+
+	return theSwitch, err
+}
+
+func (ha HomeAssistantAdapter) SetLight(switchId string, newState AllowedStateValue) (*Switch, error) {
+	command := "turn_off"
+
+	if newState == On {
+		command = "turn_on"
+	}
+
+	var url string
+
+	if strings.HasPrefix(switchId, "light") {
+		url = fmt.Sprintf("%v/api/services/light/%v", ha.host, command)
+	} else {
+		url = fmt.Sprintf("%v/api/services/switch/%v", ha.host, command)
+	}
 
 	data := fmt.Sprintf(`{"entity_id": "%v" }`, switchId)
 

@@ -10,11 +10,12 @@ import { SwitchesList } from "./SwitchesList";
 type State = {
     scenes: Scene[] | "loading";
     switches: Switch[] | "loading"
+    lights: Switch[] | "loading";
     states: Switch[] | "loading";
 };
 
 function App() {
-    const [state, setState] = useImmer<State>({ scenes: "loading", switches: "loading", states: "loading" });
+    const [state, setState] = useImmer<State>({ scenes: "loading", switches: "loading", lights: "loading", states: "loading" });
 
     const fetchScenes = useCallback(() => {
         fetch("/api/scenes")
@@ -36,6 +37,16 @@ function App() {
             );
     }, []);
 
+    const fetchLights = useCallback(() => {
+        fetch("/api/lights")
+            .then((response) => response.json())
+            .then((json) =>
+                setState((draft: State) => {
+                    draft.lights = json;
+                })
+            );
+    }, []);
+
     const fetchStates = useCallback(() => {
         fetch("/api/states")
             .then((response) => response.json())
@@ -48,6 +59,7 @@ function App() {
 
     useEffect(fetchScenes, []);
     useEffect(fetchSwitches, []);
+    useEffect(fetchLights, []);
     useEffect(fetchStates, []);
 
     useEffect(() => {
@@ -80,9 +92,18 @@ function App() {
             .then(updateState);
     }, []);
 
+    const onToggleLight = useCallback((light: Switch, newState: boolean) => {
+        fetch(`/api/set_light/${light.id}/${newState ? "on" : "off"}`, {
+            method: "POST"
+        })
+            .then((response) => response.json())
+            .then(updateLight);
+    }, []);
+
+
     return (
         <div className="App">
-            <h1>Verlichting</h1>
+            <h1>Scenes</h1>
             <div className="card">
                 {state.scenes === "loading" ? (
                     "Loading..."
@@ -96,6 +117,14 @@ function App() {
                     "Loading..."
                 ) : (
                     <SwitchesList switches={state.switches} onToggleSwitch={onToggleSwitch} />
+                )}
+            </div>
+            <h1>Lichten</h1>
+            <div className="card">
+                {state.lights === "loading" ? (
+                    "Loading..."
+                ) : (
+                    <SwitchesList switches={state.lights} onToggleSwitch={onToggleLight} />
                 )}
             </div>
             <h1>States</h1>
@@ -142,6 +171,18 @@ function App() {
             if (!state) return;
 
             state.state = newState.state;
+        });
+    }
+
+    function updateLight(newLight: Switch) {
+        setState((draft) => {
+            if (draft.lights === "loading") return;
+
+            const light = draft.lights.find((s) => s.id === newLight.id);
+
+            if (!light) return;
+
+            light.state = newLight.state;
         });
     }
 }

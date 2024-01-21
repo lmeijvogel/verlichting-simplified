@@ -34,6 +34,9 @@ func main() {
 	router.GET("/api/states", func(c *gin.Context) { getEntities(c, ha.GetStates, getAllowedStateIds()) })
 	router.POST("/api/set_state/:id/:new_state", func(c *gin.Context) { setSwitchOrState(c, getAllowedStateIds(), ha.SetState) })
 
+	router.GET("/api/lights", func(c *gin.Context) { getEntities(c, ha.GetLights, getAllowedLightIds()) })
+	router.POST("/api/set_light/:id/:new_state", func(c *gin.Context) { setSwitchOrState(c, getAllowedLightIds(), ha.SetLight) })
+
 	router.Run(":3123")
 }
 
@@ -116,4 +119,8 @@ func getAllowedSwitchIds() []string {
 
 func getAllowedStateIds() []string {
 	return []string{"input_boolean.vacation_mode", "input_boolean.elektrische_deken_in_gebruik", "input_boolean.kerstboom"}
+}
+
+func getAllowedLightIds() []string {
+	return []string{"light.eettafel", "light.salontafel", "light.keuken", "switch.schemerlamp", "switch.bureau", "switch.bijkeuken", "switch.tuinkamer", "light.overloop_zolder", "switch.tuinverlichting"}
 }
