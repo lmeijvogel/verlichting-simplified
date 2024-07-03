@@ -26,27 +26,63 @@ func main() {
 	router := gin.Default()
 	router.ForwardedByClientIP = true
 	router.SetTrustedProxies([]string{"127.0.0.1"})
-	router.GET("/api/scenes", func(c *gin.Context) { getEntities(c, ha.GetScenes, getAllowedSceneIds()) })
+
+	router.GET("/api/scenes", func(c *gin.Context) {
+		entities, err := getEntities(ha.GetScenes, getAllowedSceneIds())
+
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, entities)
+	})
+
 	router.POST("/api/start_scene/:id", func(c *gin.Context) { startScene(c, ha) })
 
-	router.GET("/api/switches", func(c *gin.Context) { getEntities(c, ha.GetSwitches, getAllowedSwitchIds()) })
+	router.GET("/api/switches", func(c *gin.Context) {
+		entities, err := getEntities(ha.GetSwitches, getAllowedSwitchIds())
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, entities)
+	})
+
 	router.POST("/api/set_switch/:id/:new_state", func(c *gin.Context) { setSwitchOrState(c, getAllowedSwitchIds(), ha.SetSwitch) })
 
-	router.GET("/api/states", func(c *gin.Context) { getEntities(c, ha.GetStates, getAllowedStateIds()) })
+	router.GET("/api/states", func(c *gin.Context) {
+		entities, err := getEntities(ha.GetStates, getAllowedStateIds())
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, entities)
+	})
+
 	router.POST("/api/set_state/:id/:new_state", func(c *gin.Context) { setSwitchOrState(c, getAllowedStateIds(), ha.SetState) })
 
-	router.GET("/api/lights", func(c *gin.Context) { getEntities(c, ha.GetLights, getAllowedLightIds()) })
+	router.GET("/api/lights", func(c *gin.Context) {
+		entities, err := getEntities(ha.GetLights, getAllowedLightIds())
+		if err != nil {
+			c.AbortWithError(500, err)
+			return
+		}
+
+		c.IndentedJSON(http.StatusOK, entities)
+	})
 	router.POST("/api/set_light/:id/:new_state", func(c *gin.Context) { setSwitchOrState(c, getAllowedLightIds(), ha.SetLight) })
 
 	router.Run(":3123")
 }
 
-func getEntities[T HasID](c *gin.Context, getter func() ([]T, error), whitelist []string) {
+func getEntities[T HasID](getter func() ([]T, error), whitelist []string) ([]T, error) {
 	typedEntities, err := getter()
 
 	if err != nil {
-		c.AbortWithError(500, err)
-		return
+		return nil, err
 	}
 
 	allowedEntities := []T{}
@@ -72,7 +108,7 @@ func getEntities[T HasID](c *gin.Context, getter func() ([]T, error), whitelist 
 		return positionI < positionJ
 	})
 
-	c.IndentedJSON(http.StatusOK, allowedEntities)
+	return allowedEntities, nil
 }
 
 func startScene(c *gin.Context, ha HomeAssistantAdapter) {
@@ -128,7 +164,7 @@ func getAllowedSceneIds() []string {
 }
 
 func getAllowedSwitchIds() []string {
-	return []string{"switch.elektrische_deken", "switch.mechanische_ventilatie", "switch.babyfoon", "switch.tv_meubel"}
+	return []string{"switch.elektrische_deken", "switch.mechanische_ventilatie", "switch.babyfoon", "switch.tv_meubel", "switch.tv"}
 }
 
 func getAllowedStateIds() []string {

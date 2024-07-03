@@ -1,22 +1,20 @@
 import { useState } from "react";
-import { Scene } from "./Scene";
 import { ListEntry } from "./ListEntry";
+import { Switch } from "./Switch";
 
 const SceneOrder = ["scene.uit", "scene.ochtend", "scene.middag", "scene.avond", "scene.nacht"];
 
 type ScenesListProps = {
-    onActivateScene: (scene: Scene) => void;
-    scenes: Scene[];
+    onActivateScene: (scene: Switch) => void;
+    scenes: Switch[];
 };
 
 export function ScenesList({ onActivateScene, scenes }: ScenesListProps) {
-    const [loadingScene, setLoadingScene] = useState<Scene | undefined>();
+    const [loadingScene, setLoadingScene] = useState<Switch | undefined>();
 
     const sortedScenes = sortScenes(scenes);
 
-    const currentScene = maxBy(scenes, "lastActivated");
-
-    const onSceneClick = (scene: Scene) => {
+    const onSceneClick = (scene: Switch) => {
         onActivateScene(scene);
         setLoadingScene(scene);
     };
@@ -26,7 +24,7 @@ export function ScenesList({ onActivateScene, scenes }: ScenesListProps) {
             {sortedScenes.map((scene) => (
                 <ListEntry
                     key={scene.id}
-                    isActive={scene.id === currentScene.id}
+                    isActive={scene.state === "on"}
                     isLoading={scene.id === loadingScene?.id}
                     onClick={() => onSceneClick(scene)}
                 >
@@ -37,7 +35,7 @@ export function ScenesList({ onActivateScene, scenes }: ScenesListProps) {
     );
 }
 
-const sortScenes: (scenes: Scene[]) => Scene[] = (scenes: Scene[]) => {
+const sortScenes: (scenes: Switch[]) => Switch[] = (scenes: Switch[]) => {
     const tempScenes = [...scenes];
 
     const result = [];
@@ -51,16 +49,4 @@ const sortScenes: (scenes: Scene[]) => Scene[] = (scenes: Scene[]) => {
     }
 
     return [...result, ...tempScenes];
-}
-
-function maxBy<T>(input: T[], field: keyof T): T {
-    let result: T = input[0];
-
-    for (const element of input) {
-        if (element[field] > result[field]) {
-            result = element;
-        }
-    }
-
-    return result;
 }

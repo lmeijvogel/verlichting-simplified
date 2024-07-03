@@ -3,11 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slices"
 )
 
 type Switch struct {
@@ -16,10 +19,16 @@ type Switch struct {
 	State        string `json:"state"`
 }
 
-type Scene struct {
+type HaScene struct {
 	ID            string    `json:"id"`
 	FriendlyName  string    `json:"friendlyName"`
 	LastActivated time.Time `json:"lastActivated"`
+}
+
+type Scene struct {
+	ID           string `json:"id"`
+	FriendlyName string `json:"friendlyName"`
+	State        string `json:"state"`
 }
 
 type AllowedStateValue string
@@ -57,7 +66,49 @@ func NewAdapter(host string, api_token string) HomeAssistantAdapter {
 }
 
 func (ha HomeAssistantAdapter) GetScenes() ([]Scene, error) {
-	return getTypedEntities(ha, deserializeScene)
+	scenes, err := getTypedEntities(ha, deserializeScene)
+
+	if err != nil {
+		return nil, err
+	}
+
+	currentScene := slices.MaxFunc(scenes, func(one HaScene, two HaScene) int {
+		if one.LastActivated.Before(two.LastActivated) {
+			return -1
+		} else if one.LastActivated.After(two.LastActivated) {
+			return 1
+		}
+
+		return 0
+	})
+
+	var result []Scene
+
+	for i := range scenes {
+		deserializedScene, err := toScene(scenes[i], currentScene.ID)
+
+		if err != nil {
+			continue
+		}
+
+		result = append(result, deserializedScene)
+	}
+
+	return result, nil
+}
+
+func toScene(haScene HaScene, currentSceneID string) (Scene, error) {
+	isCurrent := haScene.ID == currentSceneID
+
+	var state string
+
+	if isCurrent {
+		state = "on"
+	} else {
+		state = "off"
+	}
+
+	return Scene{haScene.ID, haScene.FriendlyName, state}, nil
 }
 
 func (ha HomeAssistantAdapter) GetStates() ([]Switch, error) {
@@ -79,9 +130,19 @@ func (ha HomeAssistantAdapter) StartScene(sceneId string) (*Scene, error) {
 		return nil, err
 	}
 
-	scene, err := decodeResponse(response, deserializeScene)
+	haScene, err := decodeResponse(response, deserializeScene)
 
-	return scene, err
+	if err != nil {
+		return nil, err
+	}
+
+	scene, err := toScene(*haScene, haScene.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &scene, nil
 }
 
 func (ha HomeAssistantAdapter) GetSwitches() ([]Switch, error) {
@@ -186,14 +247,17 @@ func decodeResponse[T any](response *http.Response, deserializer func(entity haE
 	return state, err
 }
 
-func deserializeScene(entity haEntity) (*Scene, error) {
+func deserializeScene(entity haEntity) (*HaScene, error) {
 	lastActivated, err := time.Parse(time.RFC3339, entity.State)
 
 	if err != nil {
 		return nil, err
 	}
 
-	scene := Scene{entity.EntityId, entity.Attributes.FriendlyName, lastActivated}
+	if !strings.HasPrefix(entity.EntityId, "scene.") {
+		return nil, errors.New("Entity is not a scene")
+	}
+	scene := HaScene{entity.EntityId, entity.Attributes.FriendlyName, lastActivated}
 
 	return &scene, nil
 }
