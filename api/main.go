@@ -164,13 +164,13 @@ func getAllowedSceneIds() []string {
 }
 
 func getAllowedSwitchIds() []string {
-	return []string{"switch.elektrische_deken", "switch.mechanische_ventilatie", "switch.babyfoon", "switch.tv_meubel", "switch.tv"}
+	return []string{}
 }
 
 func getAllowedStateIds() []string {
-	return []string{"input_boolean.vacation_mode", "input_boolean.elektrische_deken_in_gebruik", "input_boolean.kerstboom"}
+	return []string{}
 }
 
 func getAllowedLightIds() []string {
-	return []string{"light.eettafel", "light.salontafel", "light.keuken", "switch.schemerlamp", "switch.bureau", "switch.bijkeuken", "switch.tuinkamer", "light.overloop_zolder", "switch.tuinverlichting"}
+	return []string{"switch.aanrecht"}
 }
