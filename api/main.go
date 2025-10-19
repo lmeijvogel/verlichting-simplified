@@ -38,7 +38,7 @@ func main() {
 		c.IndentedJSON(http.StatusOK, entities)
 	})
 
-	router.POST("/api/start_scene/:id", func(c *gin.Context) { startScene(c, ha) })
+	router.POST("/api/start_scene/:id/on", func(c *gin.Context) { startScene(c, ha) })
 
 	router.GET("/api/switches", func(c *gin.Context) {
 		entities, err := getEntities(ha.GetSwitches, getAllowedSwitchIds())
@@ -160,7 +160,7 @@ func setSwitchOrState(c *gin.Context,
 }
 
 func getAllowedSceneIds() []string {
-	return []string{"scene.uit", "scene.ochtend", "scene.middag", "scene.avond", "scene.nacht"}
+	return []string{"script.uit", "script.ochtend", "script.avond", "script.alles_aan"}
 }
 
 func getAllowedSwitchIds() []string {

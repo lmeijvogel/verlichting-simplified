@@ -8,9 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
-
-	"golang.org/x/exp/slices"
+	// "golang.org/x/exp/slices"
 )
 
 type Switch struct {
@@ -20,9 +18,9 @@ type Switch struct {
 }
 
 type HaScene struct {
-	ID            string    `json:"id"`
-	FriendlyName  string    `json:"friendlyName"`
-	LastActivated time.Time `json:"lastActivated"`
+	ID           string `json:"id"`
+	FriendlyName string `json:"friendlyName"`
+	// LastActivated time.Time `json:"lastActivated"`
 }
 
 type Scene struct {
@@ -72,20 +70,10 @@ func (ha HomeAssistantAdapter) GetScenes() ([]Scene, error) {
 		return nil, err
 	}
 
-	currentScene := slices.MaxFunc(scenes, func(one HaScene, two HaScene) int {
-		if one.LastActivated.Before(two.LastActivated) {
-			return -1
-		} else if one.LastActivated.After(two.LastActivated) {
-			return 1
-		}
-
-		return 0
-	})
-
 	var result []Scene
 
 	for i := range scenes {
-		deserializedScene, err := toScene(scenes[i], currentScene.ID)
+		deserializedScene, err := toScene(scenes[i])
 
 		if err != nil {
 			continue
@@ -97,8 +85,8 @@ func (ha HomeAssistantAdapter) GetScenes() ([]Scene, error) {
 	return result, nil
 }
 
-func toScene(haScene HaScene, currentSceneID string) (Scene, error) {
-	isCurrent := haScene.ID == currentSceneID
+func toScene(haScene HaScene) (Scene, error) {
+	isCurrent := false
 
 	var state string
 
@@ -120,7 +108,7 @@ func (ha HomeAssistantAdapter) GetLights() ([]Switch, error) {
 }
 
 func (ha HomeAssistantAdapter) StartScene(sceneId string) (*Scene, error) {
-	url := fmt.Sprintf("%v/api/services/scene/turn_on", ha.host)
+	url := fmt.Sprintf("%v/api/services/script/turn_on", ha.host)
 
 	data := fmt.Sprintf(`{"entity_id": "%v" }`, sceneId)
 
@@ -136,7 +124,7 @@ func (ha HomeAssistantAdapter) StartScene(sceneId string) (*Scene, error) {
 		return nil, err
 	}
 
-	scene, err := toScene(*haScene, haScene.ID)
+	scene, err := toScene(*haScene)
 
 	if err != nil {
 		return nil, err
@@ -248,16 +236,10 @@ func decodeResponse[T any](response *http.Response, deserializer func(entity haE
 }
 
 func deserializeScene(entity haEntity) (*HaScene, error) {
-	lastActivated, err := time.Parse(time.RFC3339, entity.State)
-
-	if err != nil {
-		return nil, err
+	if !strings.HasPrefix(entity.EntityId, "script.") {
+		return nil, errors.New("Entity is not a script")
 	}
-
-	if !strings.HasPrefix(entity.EntityId, "scene.") {
-		return nil, errors.New("Entity is not a scene")
-	}
-	scene := HaScene{entity.EntityId, entity.Attributes.FriendlyName, lastActivated}
+	scene := HaScene{entity.EntityId, entity.Attributes.FriendlyName}
 
 	return &scene, nil
 }
