@@ -160,11 +160,11 @@ func setSwitchOrState(c *gin.Context,
 }
 
 func getAllowedSceneIds() []string {
-	return []string{"script.uit", "script.ochtend", "script.avond", "script.alles_aan"}
+	return []string{"script.uit", "script.ochtend", "script.koken", "script.avond", "script.alles_aan"}
 }
 
 func getAllowedSwitchIds() []string {
-	return []string{}
+	return []string{"input_boolean.vacation_mode", "input_boolean.auto_on_single"}
 }
 
 func getAllowedStateIds() []string {
@@ -172,5 +172,5 @@ func getAllowedStateIds() []string {
 }
 
 func getAllowedLightIds() []string {
-	return []string{"switch.aanrecht"}
+	return []string{"switch.salontafel", "switch.eettafel", "switch.schemerlamp_voor", "switch.schemerlampen_dressoir", "switch.tv_meubel", "switch.doorgang_keuken", "light.keuken", "switch.aanrecht"}
 }

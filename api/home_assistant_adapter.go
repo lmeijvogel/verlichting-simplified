@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
+	"time"
 	// "golang.org/x/exp/slices"
 )
 
@@ -18,9 +20,9 @@ type Switch struct {
 }
 
 type HaScene struct {
-	ID           string `json:"id"`
-	FriendlyName string `json:"friendlyName"`
-	// LastActivated time.Time `json:"lastActivated"`
+	ID            string    `json:"id"`
+	FriendlyName  string    `json:"friendlyName"`
+	LastActivated time.Time `json:"lastActivated"`
 }
 
 type Scene struct {
@@ -43,7 +45,8 @@ type haEntity struct {
 }
 
 type haEntityAttributes struct {
-	FriendlyName string `json:"friendly_name"`
+	FriendlyName  string `json:"friendly_name"`
+	LastTriggered string `json:"last_triggered"`
 }
 
 type HomeAssistantAdapter struct {
@@ -70,10 +73,20 @@ func (ha HomeAssistantAdapter) GetScenes() ([]Scene, error) {
 		return nil, err
 	}
 
+	currentScene := slices.MaxFunc(scenes, func(one HaScene, two HaScene) int {
+		if one.LastActivated.Before(two.LastActivated) {
+			return -1
+		} else if one.LastActivated.After(two.LastActivated) {
+			return 1
+		}
+
+		return 0
+	})
+
 	var result []Scene
 
 	for i := range scenes {
-		deserializedScene, err := toScene(scenes[i])
+		deserializedScene, err := toScene(scenes[i], currentScene.ID)
 
 		if err != nil {
 			continue
@@ -85,8 +98,8 @@ func (ha HomeAssistantAdapter) GetScenes() ([]Scene, error) {
 	return result, nil
 }
 
-func toScene(haScene HaScene) (Scene, error) {
-	isCurrent := false
+func toScene(haScene HaScene, currentSceneID string) (Scene, error) {
+	isCurrent := haScene.ID == currentSceneID
 
 	var state string
 
@@ -108,23 +121,25 @@ func (ha HomeAssistantAdapter) GetLights() ([]Switch, error) {
 }
 
 func (ha HomeAssistantAdapter) StartScene(sceneId string) (*Scene, error) {
-	url := fmt.Sprintf("%v/api/services/script/turn_on", ha.host)
+	// When calling the service through the /services/script/<name> url, it does not
+	// want the "script." prefix, so remove it
+	strippedId := strings.Replace(sceneId, "script.", "", 1)
 
-	data := fmt.Sprintf(`{"entity_id": "%v" }`, sceneId)
+	url := fmt.Sprintf("%v/api/services/script/%v", ha.host, strippedId)
 
-	response, err := performRequestWithMethodAndBody(url, ha, "POST", data)
-
-	if err != nil {
-		return nil, err
-	}
-
-	haScene, err := decodeResponse(response, deserializeScene)
+	response, err := performRequestWithMethodAndBody(url, ha, "POST", "")
 
 	if err != nil {
 		return nil, err
 	}
 
-	scene, err := toScene(*haScene)
+	pHaScene, err := decodeResponse(response, deserializeScene)
+
+	if err != nil {
+		return nil, err
+	}
+
+	scene, err := toScene(*pHaScene, sceneId)
 
 	if err != nil {
 		return nil, err
@@ -236,10 +251,36 @@ func decodeResponse[T any](response *http.Response, deserializer func(entity haE
 }
 
 func deserializeScene(entity haEntity) (*HaScene, error) {
-	if !strings.HasPrefix(entity.EntityId, "script.") {
-		return nil, errors.New("Entity is not a script")
+	lastActivated, err := time.Parse(time.RFC3339, entity.Attributes.LastTriggered)
+
+	if err != nil {
+		return nil, err
 	}
-	scene := HaScene{entity.EntityId, entity.Attributes.FriendlyName}
+	// Example output => Look at attributes.last_triggered?
+	// {
+	//   "entity_id": "script.alles_aan",
+	//   "state": "off",
+	//   "attributes": {
+	//     "last_triggered": "2025-10-19T21:31:10.500157+00:00",
+	//     "mode": "single",
+	//     "current": 0,
+	//     "friendly_name": "Alles aan"
+	//   },
+	//   "last_changed": "2025-10-19T21:31:10.990756+00:00",
+	//   "last_reported": "2025-10-19T21:31:10.990756+00:00",
+	//   "last_updated": "2025-10-19T21:31:10.990756+00:00",
+	//   "context": {
+	//     "id": "01K7Z64AS24W318GX1E2FYHCGM",
+	//     "parent_id": null,
+	//     "user_id": "c549332db9d243b8968a9ecc4d5ab57b"
+	//   }
+	// },
+
+	if !strings.HasPrefix(entity.EntityId, "script.") {
+		return nil, errors.New("Entity is not a scene")
+	}
+
+	scene := HaScene{entity.EntityId, entity.Attributes.FriendlyName, lastActivated}
 
 	return &scene, nil
 }
