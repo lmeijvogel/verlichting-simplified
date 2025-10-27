@@ -164,11 +164,11 @@ func getAllowedSceneIds() []string {
 }
 
 func getAllowedSwitchIds() []string {
-	return []string{"input_boolean.vacation_mode", "input_boolean.auto_on_single"}
+	return []string{}
 }
 
 func getAllowedStateIds() []string {
-	return []string{}
+	return []string{"input_boolean.vacation_mode", "input_boolean.auto_on_single"}
 }
 
 func getAllowedLightIds() []string {
